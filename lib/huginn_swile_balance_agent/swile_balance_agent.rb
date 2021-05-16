@@ -14,6 +14,10 @@ module Agents
 
       `bearer_token` is needed for auth.
 
+      `client_id` is needed for auth.
+
+      `refresh_token` is needed for auth (first launch).
+
       `api_key` is needed for auth.
 
       `changes_only` is only used to emit event about a currency's change.
@@ -45,6 +49,8 @@ module Agents
       {
         'bearer_token' => '',
         'api_key' => '',
+        'client_id' => '',
+        'refresh_token' => '',
         'debug' => 'false',
         'expected_receive_period_in_days' => '2',
         'changes_only' => 'true'
@@ -54,6 +60,8 @@ module Agents
     form_configurable :expected_receive_period_in_days, type: :string
     form_configurable :bearer_token, type: :string
     form_configurable :api_key, type: :string
+    form_configurable :client_id, type: :string
+    form_configurable :refresh_token, type: :string
     form_configurable :changes_only, type: :boolean
     form_configurable :debug, type: :boolean
 
@@ -64,6 +72,14 @@ module Agents
 
       unless options['api_key'].present?
         errors.add(:base, "api_key is a required field")
+      end
+
+      unless options['client_id'].present?
+        errors.add(:base, "client_id is a required field")
+      end
+
+      unless options['refresh_token'].present?
+        errors.add(:base, "refresh_token is a required field")
       end
 
       if options.has_key?('changes_only') && boolify(options['changes_only']).nil?
@@ -89,14 +105,73 @@ module Agents
 
     private
 
+    def refresh(token)
+
+      uri = URI.parse("https://directory.swile.co/oauth/token")
+      request = Net::HTTP::Post.new(uri)
+      request.content_type = "application/json"
+      request["Authority"] = "directory.swile.co"
+      request["X-Lunchr-App-Version"] = "0.1.0"
+      request["Authorization"] = "Bearer #{interpolated['bearer_token']}"
+      request["Accept-Language"] = "fr"
+      request["X-Lunchr-Platform"] = "web"
+      request["User-Agent"] = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36"
+      request["X-Api-Key"] = interpolated['api_key']
+      request["Accept"] = "*/*"
+      request["Sec-Gpc"] = "1"
+      request["Origin"] = "https://team.swile.co"
+      request["Sec-Fetch-Site"] = "same-site"
+      request["Sec-Fetch-Mode"] = "cors"
+      request["Sec-Fetch-Dest"] = "empty"
+      request["Referer"] = "https://team.swile.co/"
+      request.body = JSON.dump({
+        "client_id" => interpolated['client_id'],
+        "grant_type" => "refresh_token",
+        "refresh_token" => token
+      })
+      
+      req_options = {
+        use_ssl: uri.scheme == "https",
+      }
+      
+      response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
+        http.request(request)
+      end
+
+      log "request status : #{response.code}"
+
+      if interpolated['debug'] == 'true'
+        log "response.body"
+        log response.body
+      end
+      
+      memory['last_refresh_token'] = response.body.to_s
+
+    end
+
     def handle
+
+      if "#{memory['last_refresh_token']}" == ''
+        used_token = interpolated['refresh_token']
+        bearer = interpolated['bearer_token']
+        memory['last_refresh_token'] = interpolated['refresh_token']
+      else
+        used_token = JSON.parse(memory['last_refresh_token'])['refresh_token']
+        bearer = JSON.parse(memory['last_refresh_token'])['access_token']
+      end
+      if interpolated['debug'] == 'true'
+        log "used_token #{used_token}"
+        log "bearer #{bearer}"
+      end
+
+      refresh(used_token)
 
       uri = URI.parse("https://bff-api.swile.co/graphql")
       request = Net::HTTP::Post.new(uri)
       request.content_type = "application/json"
       request["Authority"] = "bff-api.swile.co"
       request["X-Lunchr-App-Version"] = "0.1.0"
-      request["Authorization"] = "Bearer #{interpolated['bearer_token']}"
+      request["Authorization"] = "Bearer #{bearer}"
       request["X-Lunchr-Platform"] = "web"
       request["User-Agent"] = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.72 Safari/537.36"
       request["X-Api-Key"] = interpolated['api_key']
