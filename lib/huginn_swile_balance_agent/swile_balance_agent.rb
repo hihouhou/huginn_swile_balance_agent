@@ -4,7 +4,7 @@ module Agents
 
     can_dry_run!
     no_bulk_receive!
-    default_schedule '1h'
+    default_schedule 'every_1h'
 
     description do
       <<-MD
@@ -29,20 +29,21 @@ module Agents
 
     event_description <<-MD
       Events look like this:
-        {
-          "id": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-          "type": "meal_voucher",
-          "label": "Titres-resto",
-          "balance": {
-            "text": "540,00 €",
-            "value": 540
-          },
-          "giftType": null,
-          "networks": [
-            "meal_voucher_default_fr",
-            "meal_voucher_restaurant_fr"
-          ]
-        }
+
+          {
+            "id": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+            "type": "meal_voucher",
+            "label": "Titres-resto",
+            "balance": {
+              "text": "540,00 €",
+              "value": 540
+            },
+            "giftType": null,
+            "networks": [
+              "meal_voucher_default_fr",
+              "meal_voucher_restaurant_fr"
+            ]
+          }
     MD
 
     def default_options
@@ -144,8 +145,12 @@ module Agents
         log "response.body"
         log response.body
       end
-      
-      memory['last_refresh_token'] = response.body.to_s
+
+      if response.code == 200
+        memory['last_refresh_token'] = response.body.to_s
+      else
+        log "refresh failed"
+      end
 
     end
 
