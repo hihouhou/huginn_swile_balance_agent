@@ -146,7 +146,7 @@ module Agents
         log response.body
       end
 
-      if response.code == 200
+      if response.is_a?(Net::HTTPSuccess)
         memory['last_refresh_token'] = response.body.to_s
       else
         log "refresh failed"
@@ -159,7 +159,6 @@ module Agents
       if "#{memory['last_refresh_token']}" == ''
         used_token = interpolated['refresh_token']
         bearer = interpolated['bearer_token']
-        memory['last_refresh_token'] = interpolated['refresh_token']
       else
         used_token = JSON.parse(memory['last_refresh_token'])['refresh_token']
         bearer = JSON.parse(memory['last_refresh_token'])['access_token']
