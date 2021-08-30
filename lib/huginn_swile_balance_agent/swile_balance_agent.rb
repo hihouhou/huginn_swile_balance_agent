@@ -159,16 +159,17 @@ module Agents
       if "#{memory['last_refresh_token']}" == ''
         used_token = interpolated['refresh_token']
         bearer = interpolated['bearer_token']
+        refresh(used_token)
+        bearer = JSON.parse(memory['last_refresh_token'])['access_token']
       else
         used_token = JSON.parse(memory['last_refresh_token'])['refresh_token']
+        refresh(used_token)
         bearer = JSON.parse(memory['last_refresh_token'])['access_token']
       end
       if interpolated['debug'] == 'true'
         log "used_token #{used_token}"
         log "bearer #{bearer}"
       end
-
-      refresh(used_token)
 
       uri = URI.parse("https://bff-api.swile.co/graphql")
       request = Net::HTTP::Post.new(uri)
