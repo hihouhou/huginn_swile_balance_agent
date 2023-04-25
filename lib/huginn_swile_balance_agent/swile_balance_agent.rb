@@ -171,38 +171,25 @@ module Agents
         log "bearer #{bearer}"
       end
 
-      uri = URI.parse("https://bff-api.swile.co/graphql")
-      request = Net::HTTP::Post.new(uri)
+      uri = URI.parse("https://neobank-api.swile.co/api/v0/wallets")
+      request = Net::HTTP::Get.new(uri)
       request.content_type = "application/json"
-      request["Authority"] = "bff-api.swile.co"
-      request["X-Lunchr-App-Version"] = "0.1.0"
-      request["Authorization"] = "Bearer #{bearer}"
-      request["X-Lunchr-Platform"] = "web"
-      request["User-Agent"] = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.72 Safari/537.36"
-      request["X-Api-Key"] = interpolated['api_key']
+      request["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/112.0"
       request["Accept"] = "*/*"
-      request["Sec-Gpc"] = "1"
-      request["Origin"] = "https://team.swile.co"
-      request["Sec-Fetch-Site"] = "same-site"
-      request["Sec-Fetch-Mode"] = "cors"
-      request["Sec-Fetch-Dest"] = "empty"
+      request["Accept-Language"] = "fr"
       request["Referer"] = "https://team.swile.co/"
-      request["Accept-Language"] = "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7"
-      request.body = JSON.dump({
-        "query" => "{
-          walletsOverview {
-            id
-            type
-            label
-            balance {
-              text
-              value
-            }
-            giftType
-            networks
-          }
-        }"
-      })
+      request["X-Lunchr-Platform"] = "web"
+      request["Authorization"] = "Bearer #{bearer}"
+      request["X-Api-Key"] = interpolated['api_key']
+      request["Origin"] = "https://team.swile.co"
+      request["Connection"] = "keep-alive"
+      request["Sec-Fetch-Dest"] = "empty"
+      request["Sec-Fetch-Mode"] = "cors"
+      request["Sec-Fetch-Site"] = "same-site"
+      request["Dnt"] = "1"
+      request["Pragma"] = "no-cache"
+      request["Cache-Control"] = "no-cache"
+      request["Te"] = "trailers"
       
       req_options = {
         use_ssl: uri.scheme == "https",
