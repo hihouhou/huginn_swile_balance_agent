@@ -147,7 +147,7 @@ module Agents
       end
 
       if response.is_a?(Net::HTTPSuccess)
-        memory['last_refresh_token'] = response.body.to_s
+        memory['last_refresh_token'] = response.body
       else
         log "refresh failed"
       end
@@ -216,21 +216,19 @@ module Agents
       if interpolated['changes_only'] == 'true'
         if payload.to_s != memory['last_status']
           if "#{memory['last_status']}" == ''
-            payload["data"]["walletsOverview"].each do |wallet|        
+            payload["wallets"].each do |wallet|        
               create_event payload: wallet
             end
           else
-            last_status = memory['last_status'].gsub("=>", ": ").gsub(": nil", ": null")
-            last_status = JSON.parse(last_status)
-
+            last_status = memory['last_status']
             if interpolated['debug'] == 'true'
               log "last_status"
               log last_status
             end
 
-            payload["data"]["walletsOverview"].each do |wallet|        
+            payload["wallets"].each do |wallet|        
               found = false
-              last_status["data"]["walletsOverview"].each do |walletbis|
+              last_status["wallets"].each do |walletbis|
                 if wallet == walletbis
                   found = true
                   if interpolated['debug'] == 'true'
@@ -248,16 +246,16 @@ module Agents
               end
             end
           end
-          memory['last_status'] = payload.to_s
+          memory['last_status'] = payload
         else
-            if interpolated['debug'] == 'true'
-              log "no diff"
-            end
+          if interpolated['debug'] == 'true'
+            log "no diff"
+          end
         end
       else
         create_event payload: payload
-        if payload.to_s != memory['last_status']
-          memory['last_status'] = payload.to_s
+        if payload != memory['last_status']
+          memory['last_status'] = payload
         end
       end
     end
