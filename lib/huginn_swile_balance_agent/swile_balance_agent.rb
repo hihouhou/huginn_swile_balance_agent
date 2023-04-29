@@ -229,7 +229,7 @@ module Agents
             payload["wallets"].each do |wallet|        
               found = false
               last_status["wallets"].each do |walletbis|
-                if wallet == walletbis
+                if wallet["id"] == walletbis["id"] && wallet["balance"] == walletbis["balance"]
                   found = true
                   if interpolated['debug'] == 'true'
                     log "found is #{found}"
